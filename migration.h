@@ -23,7 +23,7 @@ void migrate_to_sw() {
         char pid_buffer[10] = { };
         snprintf(pid_buffer, 10, "%d", parent_pid);
 
-        char *args[]={"./criu.sh", "dump", "-t", pid_buffer, "-D", "check", "--shell-job", "-v4", NULL}; 
+        char *args[]={"./criu.sh", "migrate", "-t", pid_buffer, "-D", "check", "--shell-job", "-v4", NULL}; 
         
         // Detach from the parent process
         setsid();
