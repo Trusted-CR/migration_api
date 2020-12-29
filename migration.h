@@ -14,32 +14,40 @@ void migrate_to_sw() {
     printf("parent_pid: %d\n", parent_pid);
 
     pid_t pid = fork();
-    switch (pid) {
-        case -1: /* error */
-            exit(-1);
-        case 0:  /* child */
-        {
-            // Prepare the arguments for CRIU
-            char pid_buffer[10] = { };
-            snprintf(pid_buffer, 10, "%d", parent_pid);
+    if(pid == -1)
+        exit(-1);
+    if(pid == 0) {
+        // Prepare the arguments for CRIU
+        char pid_buffer[10] = { };
+        snprintf(pid_buffer, 10, "%d", parent_pid);
 
-            char *args[]={"./criu.sh", "dump", "-t", pid_buffer, "-D", "check", "--shell-job", "-v4", NULL}; 
+        char *args[]={"./criu.sh", "dump", "-t", pid_buffer, "-D", "check", "--shell-job", "-v4", NULL}; 
+        
+        // Detach from the parent process
+        setsid();
 
-            // Detach from the parent process otherwise the child will be checkpointed as well
-            setsid();
-
-            // File descriptors are inherited from the parent even after exec, close them to be sure.
-            for (int fd = 3; fd < 256; fd++) 
-                (void) close(fd);
-
-            printf("my pid: %d and the parent is: %d\n", getpid(), parent_pid);
-            exit(0);
-            // execvp("./criu.sh", args);
+        // File descriptors are inherited from the parent even after exec, close them to be sure.
+        for (int fd = 3; fd < 256; fd++) 
+            (void) close(fd);
+        
+        pid_t double_fork = fork();
+        switch (double_fork) {
+            case -1: /* error */
+                exit(-1);
+            case 0:  /* child */
+                execvp("./criu.sh", args);
         }
+
+        // Let the child terminate so the parent process has no children.
+        exit(0);
     }
 
-    sleep(2);
-    exit(0);
+    // Wait for the child process to die, otherwise it is still a child according to
+    // /proc/*pid*/task/*pid*/children and therefore it will be checkpointed by CRIU
+    waitpid(pid, 0, 0);
+
+    // Let CRIU do the SIGCONT to restore execution
+    
     raise(SIGSTOP);
 }
 
