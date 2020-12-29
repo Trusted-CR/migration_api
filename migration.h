@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 void migrate_to_sw() {
     printf("Going to migrate to the SW\n");
