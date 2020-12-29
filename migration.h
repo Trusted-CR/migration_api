@@ -48,9 +48,14 @@ void migrate_to_sw() {
     // /proc/*pid*/task/*pid*/children and therefore it will be checkpointed by CRIU
     waitpid(pid, 0, 0);
 
-    // Let CRIU do the SIGCONT to restore execution
-    
-    raise(SIGSTOP);
+    // First we store 0x1 in w0
+    // Next we keep looping until w0 becomes 0x0 which is never... right..?
+    // We change the value with the debugger (CRIU) to 0x0 and checkpoint the binary.
+    // In this way the execution will continue in the secure world. 
+    __asm__("mov w0,#0x1\n\t"
+            "NEVER_ENDING_LOOP:\n\t"
+            "cmp  w0,#0x0\n\t"
+            "b.ne NEVER_ENDING_LOOP\n\t");
 }
 
 
