@@ -13,8 +13,6 @@ void migrate_to_sw() {
 
     pid_t parent_pid = getpid();
 
-    printf("parent_pid: %d\n", parent_pid);
-
     pid_t pid = fork();
     if(pid == -1)
         exit(-1);
@@ -23,7 +21,7 @@ void migrate_to_sw() {
         char pid_buffer[10] = { };
         snprintf(pid_buffer, 10, "%d", parent_pid);
 
-        char *args[]={"./criu.sh", "migrate", "-t", pid_buffer, "-D", "check", "--shell-job", "-v4", NULL}; 
+        char *args[]={"./criu.sh", "migrate", "-t", pid_buffer, "-D", "check", "--shell-job", "-v0", NULL}; 
         
         // Detach from the parent process
         setsid();
@@ -52,15 +50,32 @@ void migrate_to_sw() {
     // Next we keep looping until w0 becomes 0x0 which is never... right..?
     // We change the value with the debugger (CRIU) to 0x0 and checkpoint the binary.
     // In this way the execution will continue in the secure world. 
-    __asm__("mov w0,#0x1\n\t"
-            "NEVER_ENDING_LOOP:\n\t"
-            "cmp  w0,#0x0\n\t"
-            "b.ne NEVER_ENDING_LOOP\n\t");
+    __asm__("   mov     w0,#0x1\n\t"
+            "__PROTECTION_LOOP_ENTER_SW:\n\t"
+            "   cmp     w0,#0x0\n\t"
+            "   b.ne    __PROTECTION_LOOP_ENTER_SW\n\t");
+
+	printf("Succesfully migrated to the SW!\n");
 }
 
 
 void migrate_back_to_nw() {
     printf("Going to migrate to the NW\n");
+
+    // To migrate back to the normal world we again use a never ending loop.
+    // Only when register w1 becomes 0x0 the loop stops. Before we enter the never
+    // ending loop we perform syscall 1000. This system call does not exist but we
+    // detect it in OP-TEE as an indicator that the program wants to migrate back.
+    // OP-TEE detects it and changes register w1 to 0x0 before migrating back so 
+    // that the program will exit the loop. 
+    __asm__("   mov    w1,#0x1\n\t"
+            "   mov    w8,#0x3e8\n\t"   // System call numbers are stored in x8 on arm64. (syscall 1000 (0x3eb))
+            "   svc    0x0\n\t"         // Perform the system call
+            "__PROTECTION_LOOP_EXIT_SW:\n\t"
+            "   cmp    w1,#0x0\n\t"
+            "   b.ne   __PROTECTION_LOOP_EXIT_SW\n\t");
+
+	printf("Succesfully migrated back to the SW!\n");
 }
 
 #endif // MIGRATION_H

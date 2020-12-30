@@ -11,9 +11,7 @@ int main() {
 	printf("This is a sample program\n");
 
 	migrate_to_sw();
-	printf("this should be after the migration\n");
 
-	sleep(1);
 	printf("Intended to demo the binary\n");
 	sleep(1);
 	
