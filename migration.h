@@ -3,12 +3,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/types.h>
+#include <stdbool.h>
 #include <sys/wait.h>
 
+static bool __migrated_to_sw = false;
+
 void migrate_to_sw() {
+    if(__migrated_to_sw) {
+        printf("Error: Request to migrate to the SW but already executing in SW\n");
+        return;
+    }
+
     printf("Going to migrate to the SW\n");
 
     pid_t parent_pid = getpid();
@@ -55,11 +60,18 @@ void migrate_to_sw() {
             "   cmp     w0,#0x0\n\t"
             "   b.ne    __PROTECTION_LOOP_ENTER_SW\n\t");
 
+    __migrated_to_sw = true;
+
 	printf("Succesfully migrated to the SW!\n");
 }
 
 
 void migrate_back_to_nw() {
+    if(!__migrated_to_sw) {
+        printf("Error: Request to migrate back to NW but already executing in NW\n");
+        return;
+    }
+
     printf("Going to migrate to the NW\n");
 
     // To migrate back to the normal world we again use a never ending loop.
@@ -74,6 +86,8 @@ void migrate_back_to_nw() {
             "__PROTECTION_LOOP_EXIT_SW:\n\t"
             "   cmp    w1,#0x0\n\t"
             "   b.ne   __PROTECTION_LOOP_EXIT_SW\n\t");
+
+    __migrated_to_sw = false;
 
 	printf("Succesfully migrated back to the SW!\n");
 }
