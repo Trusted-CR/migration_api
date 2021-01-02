@@ -26,7 +26,7 @@ void migrate_to_sw() {
         char pid_buffer[10] = { };
         snprintf(pid_buffer, 10, "%d", parent_pid);
 
-        char *args[]={"./criu.sh", "migrate", "-t", pid_buffer, "-D", "check", "--shell-job", "-v0", NULL}; 
+        char *args[]={"./optee_app_migrator", "-m", pid_buffer, NULL}; 
         
         // Detach from the parent process
         setsid();
@@ -40,7 +40,7 @@ void migrate_to_sw() {
             case -1: /* error */
                 exit(-1);
             case 0:  /* child */
-                execvp("./criu.sh", args);
+                execvp(args[0], args);
         }
 
         // Let the child terminate so the parent process has no children.
