@@ -20,6 +20,11 @@ int main() {
 	printf("%s\n", words);
 	
 	
+	migrate_back_to_nw();
+
+	printf("We are briefly back in the normal world\n");
+
+	migrate_to_sw();
 	sleep(1);
 	
 	int y = 0;
