@@ -10,6 +10,7 @@ int main() {
 	
 	printf("This is a sample program\n");
 
+	// Migrate to the secure world
 	migrate_to_sw();
 
 	printf("Intended to demo the binary\n");
@@ -20,10 +21,12 @@ int main() {
 	printf("%s\n", words);
 	
 	
+	// Migrate back to the normal world
 	migrate_back_to_nw();
 
 	printf("We are briefly back in the normal world\n");
 
+	// Migrate to the secure world
 	migrate_to_sw();
 	sleep(1);
 	
@@ -34,6 +37,7 @@ int main() {
 	}
 	
 	sleep(1);
+	// Migrate back to the normal world
 	migrate_back_to_nw();
 	
 	printf("Bye\n");

@@ -18,6 +18,8 @@ void migrate_to_sw() {
 
     pid_t parent_pid = getpid();
 
+    // Fork and execute optee_app_migrator which will dump the parent_pid with CRIU
+    // after that it will migrate the checkpoint to the secure world.
     pid_t pid = fork();
     if(pid == -1)
         exit(-1);
@@ -35,6 +37,10 @@ void migrate_to_sw() {
         for (int fd = 3; fd < 256; fd++) 
             (void) close(fd);
         
+        // We are double forking, otherwise CRIU will try to dump itself. Even though we call setsid()
+        // linux will still list the forked process as a child in /proc/<pid>/tasks/<pid>/children.
+        // CRIU uses the 'children' file to dump a process and its children. By double forking and exiting
+        // the first fork, it is no longer a child.
         pid_t double_fork = fork();
         switch (double_fork) {
             case -1: /* error */
@@ -54,7 +60,8 @@ void migrate_to_sw() {
     // First we store 0x1 in w0
     // Next we keep looping until w0 becomes 0x0 which is never... right..?
     // We change the value with the debugger (CRIU) to 0x0 and checkpoint the binary.
-    // In this way the execution will continue in the secure world. 
+    // In this way the first instruction in the secure world will be after the
+    // migration function. 
     __asm__("   mov     w0,#0x1\n\t"
             "__PROTECTION_LOOP_ENTER_SW:\n\t"
             "   cmp     w0,#0x0\n\t"
