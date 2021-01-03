@@ -18,7 +18,7 @@ void migrate_to_sw() {
 
     pid_t parent_pid = getpid();
 
-    // Fork and execute optee_app_migrator which will dump the parent_pid with CRIU
+    // Fork and execute trusted_cr which will dump the parent_pid with CRIU
     // after that it will migrate the checkpoint to the secure world.
     pid_t pid = fork();
     if(pid == -1)
@@ -28,7 +28,7 @@ void migrate_to_sw() {
         char pid_buffer[10] = { };
         snprintf(pid_buffer, 10, "%d", parent_pid);
 
-        char *args[]={"./optee_app_migrator", "-m", pid_buffer, NULL}; 
+        char *args[]={"./trusted_cr", "-m", pid_buffer, NULL}; 
         
         // Detach from the parent process
         setsid();
