@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "migration.h"
+#include "trusted_cr.h"
 
 int main() {
 	printf("Hello World\n");
@@ -11,7 +11,7 @@ int main() {
 	printf("This is a sample program\n");
 
 	// Migrate to the secure world
-	migrate_to_sw();
+	trusted_cr_migrate_to_sw();
 
 	printf("Intended to demo the binary\n");
 	sleep(1);
@@ -22,12 +22,12 @@ int main() {
 	
 	
 	// Migrate back to the normal world
-	migrate_back_to_nw();
+	trusted_cr_migrate_back_to_nw();
 
 	printf("We are briefly back in the normal world\n");
 
 	// Migrate to the secure world
-	migrate_to_sw();
+	trusted_cr_migrate_to_sw();
 	sleep(1);
 	
 	int y = 0;
@@ -38,7 +38,7 @@ int main() {
 	
 	sleep(1);
 	// Migrate back to the normal world
-	migrate_back_to_nw();
+	trusted_cr_migrate_back_to_nw();
 	
 	printf("Bye\n");
 	

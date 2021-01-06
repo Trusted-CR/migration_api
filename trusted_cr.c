@@ -1,16 +1,13 @@
-#ifndef MIGRATION_H
-#define MIGRATION_H
-
+#include "trusted_cr.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/wait.h>
-#include "migration.h"
 #include <unistd.h>
 
 static bool __migrated_to_sw = false;
 
-void migrate_to_sw() {
+void trusted_cr_migrate_to_sw() {
     if(__migrated_to_sw) {
         printf("Error: Request to migrate to the SW but already executing in SW\n");
         return;
@@ -75,7 +72,7 @@ void migrate_to_sw() {
 }
 
 
-void migrate_back_to_nw() {
+void trusted_cr_migrate_back_to_nw() {
     if(!__migrated_to_sw) {
         printf("Error: Request to migrate back to NW but already executing in NW\n");
         return;
@@ -100,5 +97,3 @@ void migrate_back_to_nw() {
 
 	printf("Succesfully migrated back to the SW!\n");
 }
-
-#endif // MIGRATION_H
