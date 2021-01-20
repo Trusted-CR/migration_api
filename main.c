@@ -30,13 +30,16 @@ int main() {
 
 	struct timespec start, end;
 
+	int times = 0;
+
 	// Test touching multiple pages repeatedly assigning and reading from them causing them to get swapped in and out of SRAM
 	// Use this to measure pagefault performance  
 	trusted_cr_migrate_to_sw();
 	clock_gettime(CLOCK_MONOTONIC, &start);
-	for(int x = 0; x < 1000; x++) {
+	for(int x = 0; x < 10000; x++) {
 		for(int i = 0; i < TEST_BUFFER_SIZE; i++) {
 			test_buffer[i] = 1;
+			times++;
 		}
 	}
 	clock_gettime(CLOCK_MONOTONIC, &end);
@@ -44,16 +47,35 @@ int main() {
 	stoptime = end.tv_sec * SEC_TO_NANOSEC + end.tv_nsec;
 
 	elapsedtime = stoptime - starttime;	
-	printf("Took: %d seconds and %d nsec\n", elapsedtime / SEC_TO_NANOSEC,  elapsedtime % SEC_TO_NANOSEC);
+	printf("%d assignments: %d seconds and %d nsec\n", times, elapsedtime / SEC_TO_NANOSEC,  elapsedtime % SEC_TO_NANOSEC);
+	times = 0;
+
+	trusted_cr_migrate_back_to_nw();
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	for(int x = 0; x < 10000; x++) {
+		for(int i = 0; i < TEST_BUFFER_SIZE; i++) {
+			test_buffer[i] = 1;
+			times++;
+		}
+	}
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	starttime = start.tv_sec * SEC_TO_NANOSEC + start.tv_nsec;
+	stoptime = end.tv_sec * SEC_TO_NANOSEC + end.tv_nsec;
+
+	elapsedtime = stoptime - starttime;	
+	printf("%d assignments: %d seconds and %d nsec\n", times, elapsedtime / SEC_TO_NANOSEC,  elapsedtime % SEC_TO_NANOSEC);
+	times = 0;
+	
+	trusted_cr_migrate_to_sw();
 	
 	int p;
 	u_int32_t mvfr0;
 	clock_gettime(CLOCK_MONOTONIC, &start);
-	for(int x = 0; x < 1000; x++) {
+	for(int x = 0; x < 10000; x++) {
 		for(int i = 0; i < TEST_BUFFER_SIZE; i++) {
-			test_buffer[i] = 1;
-			// test_buffer[i] = test_buffer[TEST_BUFFER_SIZE-i];
-			__asm__ volatile("FADD	S0, S1, S2");
+			p = test_buffer[1];
+			times++;
 		}
 	}
 	clock_gettime(CLOCK_MONOTONIC, &end);
@@ -61,24 +83,29 @@ int main() {
 	stoptime = end.tv_sec * SEC_TO_NANOSEC + end.tv_nsec;
 
 	elapsedtime = stoptime - starttime;	
-	printf("Took: %d seconds and %d nsec\n", elapsedtime / SEC_TO_NANOSEC,  elapsedtime % SEC_TO_NANOSEC);
-
-	clock_gettime(CLOCK_MONOTONIC, &start);
-	for(int x = 0; x < 1000; x++) {
-		for(int i = 0; i < TEST_BUFFER_SIZE; i++) {
-			p = test_buffer[i];
-		}
-	}
-	clock_gettime(CLOCK_MONOTONIC, &end);
-	starttime = start.tv_sec * SEC_TO_NANOSEC + start.tv_nsec;
-	stoptime = end.tv_sec * SEC_TO_NANOSEC + end.tv_nsec;
-
-	elapsedtime = stoptime - starttime;	
-	printf("Took: %d seconds and %d nsec\n", elapsedtime / SEC_TO_NANOSEC,  elapsedtime % SEC_TO_NANOSEC);
+	printf("%d assignments: %d seconds and %d nsec\n", times, elapsedtime / SEC_TO_NANOSEC,  elapsedtime % SEC_TO_NANOSEC);
 
 
 
 	trusted_cr_migrate_back_to_nw();
+
+	printf("NW: \n");
+
+	times = 0;
+	
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	for(int x = 0; x < 10000; x++) {
+		for(int i = 0; i < TEST_BUFFER_SIZE; i++) {
+			p = test_buffer[1];
+			times++;
+		}
+	}
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	starttime = start.tv_sec * SEC_TO_NANOSEC + start.tv_nsec;
+	stoptime = end.tv_sec * SEC_TO_NANOSEC + end.tv_nsec;
+
+	elapsedtime = stoptime - starttime;	
+	printf("%d assignments: %d seconds and %d nsec\n", times, elapsedtime / SEC_TO_NANOSEC,  elapsedtime % SEC_TO_NANOSEC);
 
 	free(test_buffer);
 		
