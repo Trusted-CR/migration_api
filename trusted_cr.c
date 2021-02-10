@@ -61,9 +61,11 @@ void trusted_cr_migrate_to_sw() {
     // We change the value with the debugger (CRIU) to 0x0 and checkpoint the binary.
     // In this way the first instruction in the secure world will be after the
     // migration function. 
-    __asm__("   mov     w0,#0x1\n\t"
+    __asm__("   mov     w1,#0x1\n\t"
             "__PROTECTION_LOOP_ENTER_SW:\n\t"
-            "   cmp     w0,#0x0\n\t"
+            "   mov    w8,#0x22\n\t"    // Store the pause syscall number.
+            "   svc    0x0\n\t"         // Perform the system call.
+            "   cmp     w1,#0x0\n\t"
             "   b.ne    __PROTECTION_LOOP_ENTER_SW\n\t");
 
     __migrated_to_sw = true;
@@ -87,13 +89,13 @@ void trusted_cr_migrate_back_to_nw() {
     // OP-TEE detects it and changes register w1 to 0x0 before migrating back so 
     // that the program will exit the loop. 
     __asm__("   mov    w1,#0x1\n\t"
-            "   mov    w8,#0x3e8\n\t"   // System call numbers are stored in x8 on arm64. (syscall 1000 (0x3eb))
-            "   svc    0x0\n\t"         // Perform the system call
+            "   mov    w8,#0x3e8\n\t"   // Store syscall number 1000 (0x3eb).
+            "   svc    0x0\n\t"         // Perform the system call.
             "__PROTECTION_LOOP_EXIT_SW:\n\t"
             "   cmp    w1,#0x0\n\t"
             "   b.ne   __PROTECTION_LOOP_EXIT_SW\n\t");
 
     __migrated_to_sw = false;
 
-	printf("Succesfully migrated back to the SW!\n");
+	printf("Succesfully migrated back to the NW!\n");
 }
